@@ -1,0 +1,3 @@
+[submodule "OtpCodeEmailSender"]
+	path = OtpCodeEmailSender
+	url = https://github.com/ElcanMammadoff/OtpCodeEmailSender.git
