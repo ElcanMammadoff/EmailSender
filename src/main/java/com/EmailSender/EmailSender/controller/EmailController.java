@@ -3,7 +3,10 @@ package com.EmailSender.EmailSender.controller;
 import com.EmailSender.EmailSender.module.dto.request.EmailRequest;
 import com.EmailSender.EmailSender.service.EmailService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Objects;
 
