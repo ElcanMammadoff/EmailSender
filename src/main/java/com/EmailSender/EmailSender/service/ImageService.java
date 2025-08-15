@@ -1,66 +1,65 @@
 package com.EmailSender.EmailSender.service;
 
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class ImageService {
 
-    private static final String CHROME_DRIVER_PATH = "/Users/elcanmammadov/Downloads/chromedriver";
+    public void saveImages(String folderPath, List<String> urls) throws Exception {
+        // 1️⃣ Create folder if it doesn't exist
+        Path folder = Paths.get(folderPath);
+        if (!Files.exists(folder)) {
+            Files.createDirectories(folder);
+        }
 
-    static {
-        System.setProperty("webdriver.chrome.driver", CHROME_DRIVER_PATH);
-    }
+        // 2️⃣ Download and save images from URLs
+        if (urls != null) {
+            for (String urlString : urls) {
+                URL url = new URL(urlString);
 
-    public void downloadImagesFromInstagram(String postUrl, String saveFolder) {
-        ChromeOptions options = new ChromeOptions();
-        options.addArguments("--headless"); // run in background
-        options.addArguments("--no-sandbox");
-        options.addArguments("--disable-dev-shm-usage");
+                // Extract safe filename from URL path
+                String path = url.getPath();
+                String originalFileName = path.substring(path.lastIndexOf("/") + 1);
 
-        WebDriver driver = new ChromeDriver(options);
+                // Remove query parameters if any
+                if (originalFileName.contains("?")) {
+                    originalFileName = originalFileName.substring(0, originalFileName.indexOf("?"));
+                }
 
-        try {
-            driver.get(postUrl);
+                // If filename is empty, generate random one
+                if (originalFileName.isBlank()) {
+                    originalFileName = "image_" + UUID.randomUUID() + ".jpg";
+                } else {
+                    // Append random UUID to avoid duplicates
+                    String extension = "";
+                    int dotIndex = originalFileName.lastIndexOf(".");
+                    if (dotIndex != -1) {
+                        extension = originalFileName.substring(dotIndex);
+                        originalFileName = originalFileName.substring(0, dotIndex);
+                    }
+                    originalFileName = originalFileName + "_" + UUID.randomUUID() + extension;
+                }
 
-            // Find all <img> elements in the post
-            List<WebElement> images = driver.findElements(By.tagName("img"));
+                try (InputStream in = url.openStream();
+                     FileOutputStream out = new FileOutputStream(folderPath + File.separator + originalFileName)) {
 
-            int count = 1;
-            for (WebElement img : images) {
-                String src = img.getAttribute("src");
-                if (src != null && !src.isEmpty()) {
-                    downloadImage(src, saveFolder + "/image_" + count + ".jpg");
-                    count++;
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    while ((bytesRead = in.read(buffer)) != -1) {
+                        out.write(buffer, 0, bytesRead);
+                    }
                 }
             }
-        } finally {
-            driver.quit();
-        }
-    }
-
-    private void downloadImage(String imageUrl, String destinationFile) {
-        try (BufferedInputStream in = new BufferedInputStream(new URL(imageUrl).openStream());
-             FileOutputStream out = new FileOutputStream(destinationFile)) {
-
-            byte[] data = new byte[1024];
-            int count;
-            while ((count = in.read(data, 0, 1024)) != -1) {
-                out.write(data, 0, count);
-            }
-
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 }
